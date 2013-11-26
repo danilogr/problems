@@ -1,11 +1,14 @@
 //http://uva.onlinejudge.org/external/125/p12550.pdf
 //Thanks to a friend that told me that RuntimeError exceptions include DivisionByZero! I got stuck in this problem because of it
-//#NOTSOLVED #WRONGANSWER
+//Thanks again to all friends that helped me with this one. One of the problems was with memory allocation (look earlier versions of the code
+//to see how we changed the allocation from dynamic to static)
 #include <iostream>
 #include <string>
 #include <sstream>
 
 using namespace std;
+
+int S[10010];
 
 int main(int argc, char *argv[])
 {
@@ -23,11 +26,11 @@ int main(int argc, char *argv[])
 
         //read data
         const int d1 = D+1;
-        unsigned int total[d1];
         int count=0;
-        unsigned int tmp;
+        int tmp;
+
         while( ss >> tmp)
-            total[count++] =tmp;
+            S[count++] =tmp;
 
         if(count < d1)
         {
@@ -38,61 +41,71 @@ int main(int argc, char *argv[])
             // v1 v2 v3 v4
             // 0   1  2  3
             //
-            // v4 = a*v3 + b*v2
-            // v3 = a*v2 + b*v1
+            // * v4 = a*v3 + b*v2
+            // * v3 = a*v2 + b*v1
             // a*v3 = v4 - b*v2 --> a*v3 = v4 - (v3*v2 - a*v2*v2)/v1 --> (a*v3 +a*v2*v2 )/v1 = v4 - v3*v2 --> a(v3 - v2^2)/v1 = v4 - v3*v2 --> a = (v1*v4  - v2*v3)/(v3*v1 - v2*v2)
             // b*v1 = v3 - a*v2 --> b = (v3 - a*v2)/v1
-
-            --count;
 
             //binary search for zeros
 
             //last one is zero? (first and second are zeros)
-            if(total[count] == 0)
+            if(S[count-1] == 0)
             {
                 a = b =0;
+
             }
             else
+            {
                 //'first' one is zero
-                if(total[0] == 0)
+                if(S[0] == 0)
                 {
+                    //v1 v2 v3 v4
                     //v3 = a*v2 + b*v1 = a*v2 --> a = v3/v2
-                    a =  total[2]/total[1];
+                    a =  S[2]/S[1];
                     //v4 = a*v3 + b*v2 --> (v4 - b*v2)/v3
-                    b = (total[3] - a*total[1])/total[2];
+                    b = (S[3] - a*S[2])/S[1];
                 }
                 else //no zeros :(
                 {
-                    a = (total[0]*total[3] - total[1]*total[2])/(total[2]*total[0] - total[1]*total[1]);
-                    b = (total[2] - a*total[1])/total[0];
+                    int div = (S[2]*S[0] - S[1]*S[1]);  
+                    if(div != 0)
+                    {
+                        a = ((S[0]*S[3]) - (S[1]*S[2]))/div;   
+                        b = (S[2] - a*S[1])/S[0];
+                    } else {
+                        a = S[2]/S[1];
+                        b = 0;
+                    }
                 }
-
+            }
 
             //generate remaining data
             for(int i=count; i < d1; ++i)
             {
-                total[i] = (a*total[i-1] + b*total[i-2]);
-                if(total[i] < total[i-1]) //shitty way of dealing with overflows
-                    total[i] = P+1;
+                S[i] = (a*S[i-1] + b*S[i-2]);
+                if(S[i] < S[i-1]) //shitty way of dealing with overflows
+                    S[i] = P+1;
             }
+
+
 
         }
 
         // result
-        if(P >= total[D])
+        if(P >= S[D])
         {
             cout << "The spider may fall!" << endl;
         } else {
 
-            if(P <= total[0])
+            if(P < S[0])
                 cout << "The spider is going to fall!" << endl;
             else
             {
-                int distance = 1;
-                while(distance <= D-1 && total[D - distance++] > P);
-                --distance;
+                int step =0;
+                while(step < D && P >= S[step])
+                    step++;
 
-                cout << distance << endl; 
+                cout << D - step + 1 << endl;
             }
         }
     }
